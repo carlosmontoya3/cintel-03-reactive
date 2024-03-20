@@ -1,7 +1,7 @@
 import plotly.express as px
 from shiny.express import input, ui
 from shinywidgets import render_plotly
-from shiny import render
+from shiny import render, reactive
 import pandas as pd
 import seaborn as sns
 from palmerpenguins import load_penguins # This package provides the Palmer Penguins dataset
@@ -9,7 +9,7 @@ from palmerpenguins import load_penguins # This package provides the Palmer Peng
 # Use the built-in function to load the Palmer Penguins dataset
 penguins_df = load_penguins()
 
-ui.page_opts(title="Filling layout", fillable=True)
+ui.page_opts(title="Montoya-Penguin Data", fillable=True)
 
 # Add sidebar
 with ui.sidebar(open="open"):
@@ -41,7 +41,7 @@ with ui.layout_columns():
         @render_plotly
         def penguins_plot1():
             return px.histogram(
-                penguins_df, x=input.selected_attribute(), nbins=input.plotly_bin_count()
+                filtered_data(), x=input.selected_attribute(), nbins=input.plotly_bin_count()
             )
 
     with ui.card():
@@ -50,7 +50,7 @@ with ui.layout_columns():
         @render.plot
         def penguins_plot2():
             return sns.histplot(
-                data=penguins_df,
+                data=filtered_data(),
                 x=input.selected_attribute(),
                 bins=input.seaborn_bin_count(),
             )
@@ -66,7 +66,7 @@ with ui.layout_columns():
             # Call px.scatter() function
             # Pass in six arguments
             return px.scatter(
-                data_frame=penguins_df,
+                data_frame=filtered_data(),
                 x="body_mass_g",
                 y="bill_depth_mm",
                 color="species")
@@ -75,8 +75,21 @@ with ui.layout_columns():
 
     @render.data_frame
     def plot1():
-        return render.DataGrid(penguins_df)
+        return render.DataGrid(filtered_data())
 
     @render.data_frame
     def plot2():
-        return render.DataTable(penguins_df)
+        return render.DataTable(filtered_data())
+
+# --------------------------------------------------------
+# Reactive calculations and effects
+# --------------------------------------------------------
+
+# Add a reactive calculation to filter the data
+# By decorating the function with @reactive, we can use the function to filter the data
+# The function will be called whenever an input functions used to generate that output changes.
+# Any output that depends on the reactive function (e.g., filtered_data()) will be updated when the data changes.
+
+@reactive.calc
+def filtered_data():
+    return penguins_df[penguins_df["species"].isin(input.selected_species_list())]
