@@ -92,4 +92,5 @@ with ui.layout_columns():
 
 @reactive.calc
 def filtered_data():
-    return penguins_df[penguins_df["species"].isin(input.selected_species_list())]
+    selected_species = input.selected_species_list()
+    return penguins_df[penguins_df["species"].isin(selected_species)]
